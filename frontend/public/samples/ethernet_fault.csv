@@ -1,0 +1,3 @@
+device_id,latency_ms,packet_loss_pct,interface_errors,link_flaps,status
+DEPT_SW_03,210,12,340,7,degraded
+LAB_SW_01,175,9,215,4,degraded

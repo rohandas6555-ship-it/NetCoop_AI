@@ -1,0 +1,3 @@
+device_id,latency_ms,jitter_ms,packet_loss_pct,throughput_mbps,link_utilization_pct,cpu_usage_pct,memory_usage_pct,queue_drops
+HOSTEL_CORE_SW_01,280,35,8,42,94,45,61,160
+HOSTEL_AP_04,190,28,5,55,91,39,58,98

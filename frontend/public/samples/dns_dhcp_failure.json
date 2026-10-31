@@ -1,0 +1,1 @@
+[{"device_id":"DNS_SERVER_01","service":"DNS","status":"unreachable","query_failures":86},{"device_id":"DHCP_SERVER_01","service":"DHCP","status":"degraded","lease_failures":42}]
