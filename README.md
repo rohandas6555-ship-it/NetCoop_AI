@@ -9,7 +9,6 @@ NetCoop AI analyzes uploaded network telemetry and produces a structured diagnos
 ## Live demo
 
 - **Web application:** https://nettcoop-1.onrender.com/
-- **Source repository:** https://github.com/narayankr12/NETTCOOP
 
 ## What it does
 
