@@ -66,6 +66,78 @@ The agents are separate functional Python modules coordinated sequentially in on
 | **Fault Correlation Agent** | Findings and evidence from the three specialist agents, plus telemetry-domain coverage | Applies deterministic cause-priority rules, consolidates evidence, calculates heuristic confidence, and flags incomplete coverage. |
 | **Recommendation Agent** | Correlated cause and supporting evidence | Selects predefined corrective actions and requests supplementary Groq review where available. |
 
+## Agent Communication, Message Structure & Orchestration
+
+NetCoop AI uses structured, in-process communication between its five specialized agents. Each agent receives the relevant telemetry data or findings from previous stages and returns a structured Python dictionary containing its results. The orchestrator manages the sequence of execution and passes these findings to the next agent.
+
+### 1. Agent Communication Architecture
+
+The system follows a sequential orchestration model:
+
+1. **Performance Agent:** Analyzes network performance metrics such as latency, jitter, packet loss, link utilization, and queue drops.
+2. **Infrastructure Agent:** Examines infrastructure-related metrics, including CPU usage, memory usage, device status, interface errors, and link flaps.
+3. **Connectivity Agent:** Checks connectivity indicators such as DNS failures, DHCP lease failures, Wi-Fi signal strength, retransmissions, and service status.
+4. **Fault Correlation Agent:** Receives the findings from the three specialist agents, correlates supporting evidence, considers telemetry coverage, and identifies the most likely fault category.
+5. **Recommendation Agent:** Uses the correlated diagnosis to select relevant corrective actions and may request additional interpretation from the Groq LLM service.
+
+### 2. Communication Message Structure
+
+Agents communicate through structured Python dictionaries rather than unstructured text or direct user-facing messages.
+
+The communication flow follows this general structure:
+
+| Communication stage | Input | Output |
+|---|---|---|
+| Telemetry to specialist agents | Validated telemetry records and device information | Agent-specific findings and supporting evidence |
+| Specialist agents to correlation agent | Performance, infrastructure, and connectivity findings | Correlated diagnosis, confidence score, and alternative causes |
+| Correlation agent to recommendation agent | Suspected root cause and supporting evidence | Recommended corrective actions |
+| Orchestrator to API | Results from the diagnostic workflow | Unified JSON diagnostic report |
+
+Each agent's result is collected by the orchestrator and passed to the next stage. This allows the agents to work independently on their specialized diagnostic responsibilities while contributing to one unified diagnosis.
+
+### 3. Orchestration and Evidence Correlation
+
+The orchestrator controls the complete diagnostic workflow. It invokes the specialist agents, collects their findings, and forwards the combined results to the Fault Correlation Agent.
+
+The correlation stage evaluates evidence from multiple telemetry domains instead of relying on a single metric. It uses predefined diagnostic rules and priority-based fault classification to identify a suspected root cause.
+
+The system also considers telemetry coverage. If important telemetry domains are missing, it can return an `insufficient_data` status instead of presenting an unsupported diagnosis.
+
+The confidence value is a heuristic score adjusted according to available telemetry coverage. It is not a calibrated probability of the diagnosis being correct.
+
+### 4. Failure Handling and Missing Agent Results
+
+NetCoop AI includes validation and error-handling mechanisms to make the diagnostic workflow more reliable.
+
+- **Invalid telemetry files:** Unsupported formats, empty files, invalid JSON, missing CSV headers, and oversized uploads are rejected during validation.
+- **Incomplete telemetry:** Missing telemetry domains are identified and reflected in the diagnostic result.
+- **Invalid telemetry values:** Data-quality checks identify invalid numeric values, empty cells, missing device IDs, and unknown columns.
+- **LLM service failure:** If the Groq service is unavailable, its API key is missing, or a request fails, the system retains the deterministic diagnostic results and predefined recommendations.
+- **Uncertain diagnosis:** When the available evidence is insufficient, the system reports uncertainty rather than claiming a confirmed root cause.
+
+The deterministic diagnostic workflow remains the primary source of diagnosis. The LLM is used only for supplementary interpretation and does not replace the rule-based fault correlation process.
+
+### 5. Unified Diagnostic Output
+
+After orchestration is complete, the backend returns a unified JSON report containing information such as:
+
+- Incident ID and diagnostic status
+- Suspected root cause
+- Heuristic confidence score and its explanation
+- Affected devices
+- Supporting evidence
+- Alternative possible causes
+- Recommended corrective actions
+- Evidence sources
+- Telemetry coverage and quality information
+- Individual agent results
+- Supplementary LLM analysis, when available
+- Validation details and diagnostic limitations
+
+This unified output allows the frontend to present the findings in a consistent format, regardless of which agent identified the initial evidence.
+
+**Architecture Note:** The five agents currently operate as Python modules within the same backend application. Their communication is handled through structured dictionaries passed between functions under the control of the orchestrator. They are logically specialized agents, not independently deployed microservices.
+
 ### Deterministic checks and default thresholds
 
 Thresholds are centralized in `backend/app/config/thresholds.py` and can be overridden with environment variables.
